@@ -66,7 +66,7 @@ vars:
 	# BUILD_DIR = $(BUILD_DIR)
 	# SDK_PATH = $(SDK_PATH)
 
-.PHONY: compile download install install-assets install-bin install-man install-subtree image package deploy reinstall setup readme
+.PHONY: compile download install install-assets install-bin install-man install-subtree install-scalar image package deploy reinstall setup readme
 
 .SECONDARY:
 
@@ -119,6 +119,22 @@ $(BUILD_DIR)/git-$(VERSION)/osx-installed-subtree: $(BUILD_DIR)/git-$(VERSION)/o
 	cd $(BUILD_DIR)/git-$(VERSION)/contrib/subtree; $(SUBMAKE) XML_CATALOG_FILES="$(XML_CATALOG_FILES)" install install-man
 	touch $@
 
+$(BUILD_DIR)/git-$(VERSION)/osx-built-scalar: $(BUILD_DIR)/git-$(VERSION)/Makefile | setup
+ifneq (,$(wildcard $(BUILD_DIR)/git-$(VERSION)/contrib/scalar/Makefile))
+	cd $(BUILD_DIR)/git-$(VERSION); $(SUBMAKE) XML_CATALOG_FILES="$(XML_CATALOG_FILES)" -f contrib/scalar/Makefile all-scalar docs-scalar
+endif
+	touch $@
+
+$(BUILD_DIR)/git-$(VERSION)/osx-installed-scalar: $(BUILD_DIR)/git-$(VERSION)/osx-built-scalar
+ifneq (,$(wildcard $(BUILD_DIR)/git-$(VERSION)/contrib/scalar/Makefile))
+	cd $(BUILD_DIR)/git-$(VERSION); mkdir -p $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(PREFIX)/share/man/man1
+	cd $(BUILD_DIR)/git-$(VERSION); cp scalar $(DESTDIR)$(PREFIX)/bin/
+	cd $(BUILD_DIR)/git-$(VERSION); cp Documentation/scalar.1 $(DESTDIR)$(PREFIX)/share/man/man1/
+	# To make `git help scalar` work:
+	cd $(BUILD_DIR)/git-$(VERSION); cp Documentation/scalar.1 $(DESTDIR)$(PREFIX)/share/man/man1/gitscalar.1
+endif
+	touch $@
+
 $(BUILD_DIR)/git-$(VERSION)/osx-installed-assets: $(BUILD_DIR)/git-$(VERSION)/osx-installed-bin
 	mkdir -p $(DESTDIR)$(GIT_PREFIX)/etc
 	cp assets/etc/gitconfig.default $(DESTDIR)$(GIT_PREFIX)/etc/gitconfig
@@ -147,7 +163,7 @@ $(BUILD_DIR)/git-$(VERSION)/osx-installed-man: build/git-manpages-$(VERSION).tar
 	tar xzfo build/git-manpages-$(VERSION).tar.gz -C $(DESTDIR)$(GIT_PREFIX)/share/man
 	touch $@
 
-$(BUILD_DIR)/git-$(VERSION)/osx-installed: $(BUILD_DIR)/git-$(VERSION)/osx-installed-bin $(BUILD_DIR)/git-$(VERSION)/osx-installed-man $(BUILD_DIR)/git-$(VERSION)/osx-installed-assets $(BUILD_DIR)/git-$(VERSION)/osx-installed-subtree
+$(BUILD_DIR)/git-$(VERSION)/osx-installed: $(BUILD_DIR)/git-$(VERSION)/osx-installed-bin $(BUILD_DIR)/git-$(VERSION)/osx-installed-man $(BUILD_DIR)/git-$(VERSION)/osx-installed-assets $(BUILD_DIR)/git-$(VERSION)/osx-installed-subtree $(BUILD_DIR)/git-$(VERSION)/osx-installed-scalar
 	$(SUDO) chown -R root:wheel $(DESTDIR)$(GIT_PREFIX)
 	find $(DESTDIR)$(GIT_PREFIX) -type d -exec chmod ugo+rx {} \;
 	find $(DESTDIR)$(GIT_PREFIX) -type f -exec chmod ugo+r {} \;
@@ -187,12 +203,13 @@ install-assets: $(BUILD_DIR)/git-$(VERSION)/osx-installed-assets
 install-bin: $(BUILD_DIR)/git-$(VERSION)/osx-installed-bin
 install-man: $(BUILD_DIR)/git-$(VERSION)/osx-installed-man
 install-subtree: $(BUILD_DIR)/git-$(VERSION)/osx-installed-subtree
+install-scalar: $(BUILD_DIR)/git-$(VERSION)/osx-installed-scalar
 
 install: $(BUILD_DIR)/git-$(VERSION)/osx-installed
 
 download: build/git-$(VERSION).tar.gz build/git-manpages-$(VERSION).tar.gz
 
-compile: $(BUILD_DIR)/git-$(VERSION)/osx-built $(BUILD_DIR)/git-$(VERSION)/osx-built-keychain $(BUILD_DIR)/git-$(VERSION)/osx-built-subtree
+compile: $(BUILD_DIR)/git-$(VERSION)/osx-built $(BUILD_DIR)/git-$(VERSION)/osx-built-keychain $(BUILD_DIR)/git-$(VERSION)/osx-built-subtree $(BUILD_DIR)/git-$(VERSION)/osx-built-scalar
 
 deploy: tmp/deployed-$(VERSION)-$(BUILD_CODE)
 
@@ -208,6 +225,7 @@ clean:
 	[ -d $(BUILD_DIR)/git-$(VERSION) ] && cd $(BUILD_DIR)/git-$(VERSION) && $(SUBMAKE) clean || echo done
 	[ -d $(BUILD_DIR)/git-$(VERSION)/contrib/credential/osxkeychain ] && cd $(BUILD_DIR)/git-$(VERSION)/contrib/credential/osxkeychain && $(SUBMAKE) clean || echo done
 	[ -d $(BUILD_DIR)/git-$(VERSION)/contrib/subtree ] && cd $(BUILD_DIR)/git-$(VERSION)/contrib/subtree && $(SUBMAKE) clean || echo done
+	[ -d $(BUILD_DIR)/git-$(VERSION)/contrib/scalar ] && cd $(BUILD_DIR)/git-$(VERSION) && rm scalar Documentation/scalar.1 Documentation/scalar.html contrib/scalar/scalar.o contrib/scalar/json-parser.o || echo done
 
 reinstall:
 	$(SUDO) rm -rf /usr/local/git/VERSION-*
