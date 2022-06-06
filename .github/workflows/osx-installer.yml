@@ -80,7 +80,7 @@ jobs:
           # make vars
 
           PATH=/usr/local/bin:/System/Library/Frameworks:$PATH \
-          make build/intel-universal-snow-leopard/git-$VERSION/osx-built-keychain ||
+          make build/intel-universal-high-sierra/git-$VERSION/osx-built-keychain ||
           die "Build failed"
 
           PATH=/usr/local/bin:$PATH \
