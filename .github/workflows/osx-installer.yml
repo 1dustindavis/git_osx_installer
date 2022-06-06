@@ -1,10 +1,7 @@
 name: osx-installer
 
 on:
-  repository_dispatch:
-    types:
-      - osx-installer
-    push:
+    push
 
 env:
   GIT_REPOSITORY: "${{github.event.client_payload.repository}}"
