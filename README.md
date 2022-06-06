@@ -1,3 +1,5 @@
+# This fork of git_osx_installer is intended to just run the github actions for building the latest macOS version of git.
+
 # FAQ
 
 ## I have XCode installed (and consequently its bundled git); how do I get my system to use this version instead?
